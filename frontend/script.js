@@ -1,8 +1,35 @@
 const API_URL = "http://localhost:3000/movies";
+const collectionEl = document.querySelector('[data-ui="collection"]');
+const statusEl = document.querySelector('[data-ui="status"]');
+const statusTitleEl = statusEl.querySelector(".status__title");
+const statusTextEl = statusEl.querySelector(".status__text");
+const reloadBtn = document.querySelector('[data-action="reload"]');
+
+function updateUI(state, title, text) {
+  statusEl.className = "status";
+  
+  if (state === "loading") {
+    statusEl.classList.add("status--loading");
+  } else if (state === "success") {
+    statusEl.classList.add("status--success");
+  } else if (state === "error" || state === "empty") {
+    statusEl.classList.add("status--error");
+  }
+
+  statusTitleEl.textContent = title;
+  statusTextEl.textContent = text;
+
+  if (state === "success") {
+    collectionEl.hidden = false;
+    statusEl.hidden = true;
+  } else {
+    collectionEl.hidden = true;
+    statusEl.hidden = false;
+  }
+}
 
 function renderMovies(movies) {
-  const collection = document.querySelector('[data-ui="collection"]');
-  collection.textContent = "";
+  collectionEl.textContent = "";
 
   movies.forEach((movie) => {
     const card = document.createElement("article");
@@ -24,13 +51,18 @@ function renderMovies(movies) {
     const rating = document.createElement("span");
     rating.textContent = `Рейтинг: ${movie.rating}`;
 
-    meta.append(director, year, rating);
+    const isClassic = document.createElement("span");
+    isClassic.textContent = `Классика: ${movie.isClassic ? "Да" : "Нет"}`;
+
+    meta.append(director, year, rating, isClassic);
     card.append(title, meta);
-    collection.append(card);
+    collectionEl.append(card);
   });
 }
 
 async function loadMovies() {
+  updateUI("loading", "Загрузка...", "Запрашиваем данные из API.");
+  
   try {
     const response = await fetch(API_URL);
     
@@ -39,10 +71,19 @@ async function loadMovies() {
     }
     
     const movies = await response.json();
-    renderMovies(movies);
+    
+    if (movies.length === 0) {
+      updateUI("empty", "Список пуст", "В коллекции пока нет фильмов.");
+    } else {
+      renderMovies(movies);
+      updateUI("success", "Успешно", "Данные загружены.");
+    }
   } catch (error) {
     console.error("Не удалось загрузить фильмы:", error);
+    updateUI("error", "Ошибка", "Не удалось загрузить данные. Проверьте подключение к серверу.");
   }
 }
+
+reloadBtn.addEventListener("click", loadMovies);
 
 loadMovies();
