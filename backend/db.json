@@ -1,12 +1,28 @@
 {
-  "items": [
+  "movies": [
     {
-      "id": "starter-1",
-      "title": "Замените демонстрационную запись",
-      "category": "starter",
-      "value": 0,
-      "isActive": true
+      "id": "1",
+      "title": "Начало",
+      "director": "Кристофер Нолан",
+      "releaseYear": 2010,
+      "rating": 8.8,
+      "isClassic": false
+    },
+    {
+      "id": "2",
+      "title": "Крестный отец",
+      "director": "Фрэнсис Форд Коппола",
+      "releaseYear": 1972,
+      "rating": 9.2,
+      "isClassic": true
+    },
+    {
+      "id": "3",
+      "title": "Матрица",
+      "director": "Лана и Лилли Вачовски",
+      "releaseYear": 1999,
+      "rating": 8.7,
+      "isClassic": true
     }
   ]
 }
-
