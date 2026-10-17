@@ -23,6 +23,15 @@
       "releaseYear": 1999,
       "rating": 8.7,
       "isClassic": true
+    },
+    {
+      "title": "Интерстеллар",
+      "director": "Кристофер Нолан",
+      "releaseYear": 2014,
+      "rating": 8.7,
+      "isClassic": false,
+      "id": "9BXbWmLAvKo"
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

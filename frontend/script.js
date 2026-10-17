@@ -4,6 +4,8 @@ const statusEl = document.querySelector('[data-ui="status"]');
 const statusTitleEl = statusEl.querySelector(".status__title");
 const statusTextEl = statusEl.querySelector(".status__text");
 const reloadBtn = document.querySelector('[data-action="reload"]');
+const formEl = document.querySelector('[data-form="entry"]');
+const submitBtn = document.querySelector('[data-action="submit"]');
 
 function updateUI(state, title, text) {
   statusEl.className = "status";
@@ -84,6 +86,44 @@ async function loadMovies() {
   }
 }
 
+async function handleSubmit(event) {
+  event.preventDefault();
+  submitBtn.disabled = true;
+  
+  const formData = new FormData(formEl);
+  
+  const newMovie = {
+    title: formData.get("title"),
+    director: formData.get("director"),
+    releaseYear: Number(formData.get("releaseYear")),
+    rating: Number(formData.get("rating")),
+    isClassic: formData.get("isClassic") === "true"
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(newMovie)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP: ${response.status}`);
+    }
+
+    formEl.reset();
+    await loadMovies();
+  } catch (error) {
+    console.error("Не удалось добавить фильм:", error);
+    alert("Не удалось добавить фильм. Сервер недоступен.");
+  } finally {
+    submitBtn.disabled = false;
+  }
+}
+
 reloadBtn.addEventListener("click", loadMovies);
+formEl.addEventListener("submit", handleSubmit);
 
 loadMovies();
