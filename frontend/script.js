@@ -10,6 +10,7 @@ const cancelEditBtn = document.querySelector('[data-action="cancel-edit"]');
 const formTitle = document.getElementById("form-title");
 
 let editingId = null;
+let currentController = null;
 
 function updateUI(state, title, text) {
   statusEl.className = "status";
@@ -118,10 +119,24 @@ async function deleteMovie(id, cardElement) {
 }
 
 async function loadMovies() {
+  if (currentController) {
+    currentController.abort();
+  }
+  currentController = new AbortController();
+  const signal = currentController.signal;
+
+  const timeoutId = setTimeout(() => {
+    currentController.abort();
+  }, 5000);
+
   updateUI("loading", "Загрузка...", "Запрашиваем данные из API.");
+  
   try {
-    const response = await fetch(API_URL);
+    const response = await fetch(API_URL, { signal });
+    clearTimeout(timeoutId);
+    
     if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
+    
     const movies = await response.json();
     
     if (movies.length === 0) {
@@ -131,8 +146,15 @@ async function loadMovies() {
       updateUI("success", "Успешно", "Данные загружены.");
     }
   } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error.name === "AbortError") {
+      updateUI("error", "Тайм-аут", "Сервер не ответил за 5 секунд. Попробуйте позже.");
+      return;
+    }
+    
     console.error("Не удалось загрузить фильмы:", error);
-    updateUI("error", "Ошибка", "Не удалось загрузить данные.");
+    updateUI("error", "Ошибка", "Не удалось загрузить данные. Проверьте подключение.");
   }
 }
 
