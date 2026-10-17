@@ -9,8 +9,14 @@ const submitBtn = document.querySelector('[data-action="submit"]');
 const cancelEditBtn = document.querySelector('[data-action="cancel-edit"]');
 const formTitle = document.getElementById("form-title");
 
+const toastEl = document.getElementById("toast");
+const toastText = document.getElementById("toast-text");
+const toastUndoBtn = document.getElementById("toast-undo");
+
 let editingId = null;
 let currentController = null;
+let toastTimer = null;
+let deletedMovie = null;
 
 function updateUI(state, title, text) {
   statusEl.className = "status";
@@ -75,7 +81,7 @@ function renderMovies(movies) {
     deleteBtn.style.padding = "6px 12px";
     deleteBtn.style.fontSize = "0.8rem";
     deleteBtn.textContent = "Удалить";
-    deleteBtn.addEventListener("click", () => deleteMovie(movie.id, card));
+    deleteBtn.addEventListener("click", () => deleteMovie(movie, card));
 
     actions.append(editBtn, deleteBtn);
     meta.append(director, year, rating, isClassic);
@@ -106,15 +112,52 @@ function cancelEdit() {
   formTitle.textContent = "Добавить фильм";
 }
 
-async function deleteMovie(id, cardElement) {
+function showToast(movie) {
+  deletedMovie = movie;
+  toastText.textContent = `Фильм "${movie.title}" удалён`;
+  toastEl.hidden = false;
+  
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastEl.hidden = true;
+    deletedMovie = null;
+  }, 10000);
+}
+
+async function deleteMovie(movie, cardElement) {
   cardElement.remove();
   try {
-    const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    const response = await fetch(`${API_URL}/${movie.id}`, { method: "DELETE" });
     if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
+    showToast(movie);
   } catch (error) {
     console.error("Не удалось удалить фильм:", error);
     collectionEl.prepend(cardElement);
     alert("Не удалось удалить фильм. Сервер недоступен.");
+  }
+}
+
+async function undoDelete() {
+  if (!deletedMovie) return;
+  
+  clearTimeout(toastTimer);
+  toastEl.hidden = true;
+  
+  const { id, ...movieData } = deletedMovie;
+  
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(movieData)
+    });
+    if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
+    await loadMovies();
+  } catch (error) {
+    console.error("Не удалось восстановить фильм:", error);
+    alert("Не удалось восстановить фильм.");
+  } finally {
+    deletedMovie = null;
   }
 }
 
@@ -196,5 +239,6 @@ async function handleSubmit(event) {
 reloadBtn.addEventListener("click", loadMovies);
 formEl.addEventListener("submit", handleSubmit);
 cancelEditBtn.addEventListener("click", cancelEdit);
+toastUndoBtn.addEventListener("click", undoDelete);
 
 loadMovies();
