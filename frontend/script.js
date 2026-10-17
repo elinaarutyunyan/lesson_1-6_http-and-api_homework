@@ -36,6 +36,7 @@ function renderMovies(movies) {
   movies.forEach((movie) => {
     const card = document.createElement("article");
     card.className = "card";
+    card.dataset.id = movie.id;
 
     const title = document.createElement("h3");
     title.className = "card__title";
@@ -56,10 +57,33 @@ function renderMovies(movies) {
     const isClassic = document.createElement("span");
     isClassic.textContent = `Классика: ${movie.isClassic ? "Да" : "Нет"}`;
 
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "button button--danger";
+    deleteBtn.style.marginTop = "12px";
+    deleteBtn.style.padding = "6px 12px";
+    deleteBtn.style.fontSize = "0.8rem";
+    deleteBtn.textContent = "Удалить";
+    deleteBtn.addEventListener("click", () => deleteMovie(movie.id, card));
+
     meta.append(director, year, rating, isClassic);
-    card.append(title, meta);
+    card.append(title, meta, deleteBtn);
     collectionEl.append(card);
   });
+}
+
+async function deleteMovie(id, cardElement) {
+  cardElement.remove();
+
+  try {
+    const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    if (!response.ok) {
+      throw new Error(`Ошибка HTTP: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("Не удалось удалить фильм:", error);
+    collectionEl.prepend(cardElement);
+    alert("Не удалось удалить фильм. Сервер недоступен.");
+  }
 }
 
 async function loadMovies() {
@@ -67,10 +91,7 @@ async function loadMovies() {
   
   try {
     const response = await fetch(API_URL);
-    
-    if (!response.ok) {
-      throw new Error(`Ошибка HTTP: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
     
     const movies = await response.json();
     
@@ -103,15 +124,11 @@ async function handleSubmit(event) {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newMovie)
     });
 
-    if (!response.ok) {
-      throw new Error(`Ошибка HTTP: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
 
     formEl.reset();
     await loadMovies();
